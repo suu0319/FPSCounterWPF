@@ -1,0 +1,16 @@
+﻿<Window x:Class="WpfFPS.OSDWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:local="clr-namespace:WpfFPS"
+        mc:Ignorable="d"
+        Title="OSDWindow" Height="100" Width="200" 
+        WindowStyle="None" AllowsTransparency="True" Background="Transparent"
+        Topmost="True">
+    <Grid>
+        <!-- FPS Label at the top-left corner -->
+        <TextBlock x:Name="FPSLabel" HorizontalAlignment="Left" VerticalAlignment="Top"
+                   Foreground="Red" FontSize="20" Padding="10,5,0,0" Text="FPS: 0"/>
+    </Grid>
+</Window>
