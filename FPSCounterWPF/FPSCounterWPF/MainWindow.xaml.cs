@@ -9,9 +9,9 @@ namespace WpfFPS;
 
 public partial class MainWindow : Window
 {
-    private bool _isRunning ;
+    private bool _isMonitoring ;
     private OSDWindow? _osdWindow;
-    private Thread? _runningThread;
+    private Thread? _monitoringThread;
 
     public MainWindow()
     {
@@ -20,33 +20,29 @@ public partial class MainWindow : Window
 
     private void Start_Click(object sender, RoutedEventArgs e)
     {
-        if (_isRunning)
+        if (_isMonitoring)
         {
             return;
         }
         
         UpdateLog("Start");
         
-        _isRunning = true;
+        _isMonitoring = true;
         _osdWindow = new OSDWindow();
         _osdWindow.Show();
-        _runningThread = new Thread(StartRunning) { IsBackground = true };
-        _runningThread.Start();
+        _monitoringThread = new Thread(StartRunning) { IsBackground = true };
+        _monitoringThread.Start();
     }
 
     private void Stop_Click(object sender, RoutedEventArgs e)
     {
-        if (!_isRunning)
+        if (!_isMonitoring)
         {
             return;
         }
         
         UpdateLog("Stop");
-        _isRunning = false;
-        _runningThread?.Join();
-        _runningThread = null;
-        _osdWindow?.Close();
-        _osdWindow = null;
+        StopMonitoring();
         
         Dispatcher.Invoke(() =>
         {
@@ -68,11 +64,29 @@ public partial class MainWindow : Window
         return Process.GetProcesses().Any(process => process.ProcessName.Equals(appName, StringComparison.OrdinalIgnoreCase));
     }
 
+    private void StopMonitoring()
+    {
+        if (!_isMonitoring)
+        {
+            return;
+        }
+
+        _isMonitoring = false;
+        _monitoringThread?.Join();
+        _monitoringThread = null;
+
+        if (_osdWindow != null)
+        {
+            _osdWindow.Dispatcher.Invoke(() => _osdWindow.Close());  
+            _osdWindow = null;
+        }
+    }
+    
     private void StartRunning()
     {
         Task.Run(() =>
         {
-            while (_isRunning)
+            while (_isMonitoring)
             {
                 try
                 {
@@ -141,6 +155,12 @@ public partial class MainWindow : Window
                 Thread.Sleep(1000);
             }
         });
+    }
+    
+    protected override void OnClosed(EventArgs e)
+    {
+        base.OnClosed(e);
+        StopMonitoring();
     }
 }
 
