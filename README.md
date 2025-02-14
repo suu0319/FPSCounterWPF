@@ -1,5 +1,5 @@
 ## Intro  
-This project uses WPF to simulate an OSD FPS Counter by reading FPS data from RTSS
+Use WPF to simulate an OSD FPS Counter by reading FPS data from RTSS
 
 ## Prerequisites  
 1. Install [RTSS](https://www.guru3d.com/download/rtss-rivatuner-statistics-server-download/)  
