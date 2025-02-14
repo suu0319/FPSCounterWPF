@@ -84,11 +84,13 @@ namespace WpfFPS
             {
                 if (fps == 0)
                 {
-                    FPSLabel.Text = string.Empty;
-                    return;
+                    FPSLabel.Visibility = Visibility.Hidden;
                 }
-                
-                FPSLabel.Text = $"FPS: {fps}";
+                else
+                {
+                    FPSLabel.Visibility = Visibility.Visible;
+                    FPSLabel.Text = $"FPS: {fps}";
+                }
             });
         }
     }
