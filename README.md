@@ -1,4 +1,4 @@
-## About  
+## Intro  
 This project uses WPF to simulate an OSD FPS Counter by reading FPS data from RTSS
 
 ## Prerequisites  
