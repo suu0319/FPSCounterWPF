@@ -12,8 +12,7 @@ Use WPF to simulate an OSD FPS Counter by reading FPS data from RTSS
 
 ## Preview  
 ![image](https://github.com/user-attachments/assets/c85de8e2-a19a-4b96-a084-ae7fc8ed15bb)
-![image](https://github.com/user-attachments/assets/ed8f69cd-30c2-4822-9c17-0b428514256c)
-![image](https://github.com/user-attachments/assets/934ccf8e-74a1-405c-a855-e098481b94a8)
+![image](https://github.com/user-attachments/assets/3f3b218d-d334-437e-b19c-015b7573c30b)
 
 ## Download  
 [GoogleDrive](https://drive.google.com/file/d/12ok8IHk1W6jNaFccj4RRMm_Zg6jMeTBG/view?usp=sharing)
