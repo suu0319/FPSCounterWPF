@@ -12,17 +12,12 @@ namespace WpfFPS
         private Thread _runningThread;
         private Task? _fpsMonitoringTask = null; 
         private CancellationTokenSource _fpsCancelToken = new CancellationTokenSource();
-        private IntPtr _currentHwnd = IntPtr.Zero; // Track current hooked HWND
+        private GraphicsWindow _graphicsWindow;
+        private IntPtr _currentHwnd = IntPtr.Zero;
         
         public MainWindow()
         {
             InitializeComponent();
-            Loaded += OnLoaded;
-        }
-
-        private void OnLoaded(object sender, RoutedEventArgs e)
-        {
-            var hwnd = new WindowInteropHelper(this).Handle;
         }
 
         private void Start_Click(object sender, RoutedEventArgs e)
@@ -81,6 +76,27 @@ namespace WpfFPS
             }
         }
         
+        private (int x, int y, int width, int height) GetWindowInfo(IntPtr hwnd)
+        {
+            GetWindowRect(hwnd, out var rect);
+            var screenWidth = SystemParameters.PrimaryScreenWidth;
+            var screenHeight = SystemParameters.PrimaryScreenHeight;
+            var x = rect.Left;
+            var y = rect.Top;
+            var width = rect.Right - rect.Left;
+            var height = rect.Bottom - rect.Top;
+            var style = GetWindowLong(hwnd, GWL_STYLE);
+            var isBorderless = (style & WS_CAPTION) == 0;
+            var isFullScreen = width == (int)screenWidth && height == (int)screenHeight && rect.Left == 0 && rect.Top == 0;
+                
+            if (!isBorderless || !isFullScreen)
+            {
+                y += 20;
+            }
+
+            return (x, y, width, height);
+        }
+        
         private async void StartRunning()
         {
             Console.WriteLine("[INFO] FPS monitoring started");
@@ -92,10 +108,10 @@ namespace WpfFPS
                 {
                     _currentHwnd = hwnd;
                     Console.WriteLine($"[INFO] Detected new foreground application HWND: {hwnd}");
-                    
+
                     _fpsCancelToken.Cancel();
-                    _fpsCancelToken = new CancellationTokenSource(); // Create a new token
-                    
+                    _fpsCancelToken = new CancellationTokenSource(); // 創建新的 CancellationToken
+
                     string processName = GetProcessNameByHwnd(hwnd);
                     if (string.IsNullOrEmpty(processName))
                     {
@@ -103,7 +119,7 @@ namespace WpfFPS
                         await Task.Delay(1000);
                         continue;
                     }
-                    
+
                     GetWindowThreadProcessId(hwnd, out uint pid);
                     if (pid == 0)
                     {
@@ -113,15 +129,15 @@ namespace WpfFPS
                     }
 
                     Console.WriteLine($"[INFO] Monitoring FPS for {processName} (PID: {pid})");
-                    
-                    _fpsMonitoringTask = MonitorFPSAsync(pid, _fpsCancelToken.Token);
+
+                    _fpsMonitoringTask = MonitorFPSAsync(pid, hwnd, _fpsCancelToken.Token);
                 }
 
                 await Task.Delay(1000);
             }
         }
-        
-        private async Task MonitorFPSAsync(uint pid, CancellationToken cancellationToken)
+
+        private async Task MonitorFPSAsync(uint pid, IntPtr hwnd, CancellationToken cancellationToken)
         {
             try
             {
@@ -130,14 +146,34 @@ namespace WpfFPS
                     if (cancellationToken.IsCancellationRequested)
                     {
                         Console.WriteLine("[INFO] FPS monitoring canceled");
+
+                        if (_graphicsWindow != null)
+                        {
+                            _graphicsWindow.Hide();
+                        }
+                        
                         return;
                     }
 
-                    Console.WriteLine($"[INFO] FPS: {fpsData.Fps:F1}");
+                    Console.WriteLine($"[INFO] FPS: {fpsData.Fps}");
                     Dispatcher.Invoke(() =>
                     {
-                        UpdateLog($"FPS: {fpsData.Fps:F1}");
+                        UpdateLog($"FPS: {fpsData.Fps}");
                     });
+
+                    var (x, y, width, height) = GetWindowInfo(hwnd);
+
+                    if (_graphicsWindow == null)
+                    {
+                        _graphicsWindow = new GraphicsWindow(hwnd, x, y, width, height);
+                        _graphicsWindow.Run();
+                    }
+                    else
+                    {
+                        _graphicsWindow.SetWindowInfo(x, y, width, height, (int)fpsData.Fps);
+                        _graphicsWindow.Show();
+                        _graphicsWindow.KeepOverlayVisible();
+                    }
                 }, cancellationToken);
             }
             catch (Exception ex)
@@ -147,10 +183,27 @@ namespace WpfFPS
         }
         
         [DllImport("user32.dll")]
+        private static extern long GetWindowLong(IntPtr hWnd, int nIndex);
+
+        private const int GWL_STYLE = -16;
+        private const long WS_CAPTION = 0x00C00000;  // 視窗標題欄
+        
+        [DllImport("user32.dll")]
         private static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint processId);
         
         [DllImport("user32.dll")]
         private static extern IntPtr GetForegroundWindow();
+        
+        [DllImport("user32.dll")]
+        private static extern bool GetWindowRect(IntPtr hwnd, out RECT lpRect);
 
+        [StructLayout(LayoutKind.Sequential)]
+        public struct RECT
+        {
+            public int Left;
+            public int Top;
+            public int Right;
+            public int Bottom;
+        }
     }
 }
